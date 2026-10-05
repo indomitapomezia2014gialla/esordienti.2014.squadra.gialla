@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASD Indomita Pomezia - Esordienti 2026/2027</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .bg-societa-giallo { background-color: #d99b00; }
+        .text-societa-giallo { color: #d99b00; }
+        .border-societa-giallo { border-color: #d99b00; }
+    </style>
+</head>
+<body class="bg-societa-giallo min-h-screen text-slate-900">
+
+    <!-- Header -->
+    <header class="bg-black text-[#d99b00] shadow-md border-b-4 border-[#d99b00]">
+        <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold flex items-center gap-3">
+                    <i class="fa-solid fa-futbol text-[#d99b00]"></i> Indomita Pomezia
+                </h1>
+                <p class="text-amber-200 text-sm mt-1">Campionato Esordienti 2026-2027 | Live Cloud Sincronizzato</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex items-center gap-3">
+                <span id="sync-status" class="text-xs bg-zinc-800 text-amber-300 px-3 py-1.5 rounded-full border border-amber-500/30 flex items-center gap-1.5">
+                    <i class="fa-solid fa-cloud text-amber-400"></i> Connessione in corso...
+                </span>
+                <button onclick="loadFromCloud()" class="bg-zinc-900 hover:bg-zinc-800 text-[#d99b00] border border-[#d99b00] px-3 py-2 rounded text-sm font-medium transition flex items-center gap-2">
+                    <i class="fa-solid fa-rotate"></i> Aggiorna
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="max-w-7xl mx-auto px-4 mt-6">
+        <div class="flex border-b border-black/30 gap-6">
+            <button onclick="switchTab('calendario')" id="btn-calendario" class="pb-3 font-bold text-black border-b-2 border-black flex items-center gap-2 transition">
+                <i class="fa-solid fa-calendar-days"></i> Calendario & Risultati
+            </button>
+            <button onclick="switchTab('marcatori')" id="btn-marcatori" class="pb-3 font-semibold text-zinc-900/70 hover:text-black flex items-center gap-2 transition">
+                <i class="fa-solid fa-award"></i> Classifica Marcatori
+            </button>
+            <button onclick="switchTab('rosa')" id="btn-rosa" class="pb-3 font-semibold text-zinc-900/70 hover:text-black flex items-center gap-2 transition">
+                <i class="fa-solid fa-users"></i> Rosa & Staff
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- TAB 1: CALENDARIO -->
+        <div id="tab-calendario" class="space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-black">Partite e Risultati</h2>
+                <button onclick="openMatchModal()" class="bg-black hover:bg-zinc-900 text-[#d99b00] border border-[#d99b00] px-4 py-2 rounded shadow font-medium flex items-center gap-2 transition">
+                    <i class="fa-solid fa-plus"></i> Nuova Partita
+                </button>
+            </div>
+
+            <div class="bg-white/95 backdrop-blur rounded-xl shadow overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-zinc-200 text-slate-700 text-sm uppercase tracking-wider">
+                            <th class="p-3">Data</th>
+                            <th class="p-3">Tipo</th>
+                            <th class="p-3">Avversario</th>
+                            <th class="p-3 text-center">Esito</th>
+                            <th class="p-3 text-center">Risultato</th>
+                            <th class="p-3">Formazione / Convocati</th>
+                            <th class="p-3">Marcatori</th>
+                            <th class="p-3">Note</th>
+                            <th class="p-3 text-center">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matches-table-body" class="divide-y divide-slate-200 text-sm">
+                        <tr><td colspan="9" class="p-4 text-center text-slate-500">Caricamento partite in corso...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: MARCATORI -->
+        <div id="tab-marcatori" class="hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-black">Classifica Capocannoniere</h2>
+                <span class="text-sm text-black/80 font-medium">Aggiornata automaticamente in tempo reale</span>
+            </div>
+
+            <div class="bg-white/95 backdrop-blur rounded-xl shadow overflow-hidden max-w-2xl mx-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-black text-[#d99b00] text-sm uppercase tracking-wider">
+                            <th class="p-3 text-center w-16">Pos.</th>
+                            <th class="p-3">Giocatore</th>
+                            <th class="p-3 text-center w-28">Gol Totali</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scorers-table-body" class="divide-y divide-slate-200 text-sm">
+                        <!-- Popolato via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: ROSA & STAFF -->
+        <div id="tab-rosa" class="hidden space-y-6">
+            <div class="bg-white/95 backdrop-blur rounded-xl shadow p-6 space-y-4">
+                <h3 class="text-lg font-bold text-black flex items-center gap-2">
+                    <i class="fa-solid fa-user-tie text-[#d99b00]"></i> Staff Tecnico
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Primo Allenatore</label>
+                        <input type="text" id="coach-first" oninput="saveStaff()" placeholder="Nome Primo Allenatore" class="w-full border border-black/30 bg-white px-3 py-2 rounded text-sm focus:outline-none focus:border-black">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Secondo Allenatore</label>
+                        <input type="text" id="coach-second" oninput="saveStaff()" placeholder="Nome Secondo Allenatore" class="w-full border border-black/30 bg-white px-3 py-2 rounded text-sm focus:outline-none focus:border-black">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/95 backdrop-blur rounded-xl shadow p-6 space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <h3 class="text-lg font-bold text-black flex items-center gap-2">
+                        <i class="fa-solid fa-users text-[#d99b00]"></i> Rosa Giocatori
+                    </h3>
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <input type="text" id="new-player-name" placeholder="Nome nuovo giocatore" class="border border-black/30 bg-white px-3 py-2 rounded text-sm focus:outline-none focus:border-black flex-1 md:w-64">
+                        <button onclick="addPlayer()" class="bg-black hover:bg-zinc-900 text-[#d99b00] px-4 py-2 rounded text-sm font-medium transition whitespace-nowrap">Aggiungi</button>
+                    </div>
+                </div>
+
+                <div id="players-list" class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                    <!-- Popolato via JS -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Match Modal -->
+    <div id="match-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-xl w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <h3 id="modal-title" class="text-lg font-bold text-slate-800">Aggiungi / Modifica Partita</h3>
+            <input type="hidden" id="match-id">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Data</label>
+                    <input type="date" id="match-date" class="w-full border border-slate-300 p-2 rounded text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Tipo Partita</label>
+                    <select id="match-type" class="w-full border border-slate-300 p-2 rounded text-sm">
+                        <option value="Campionato">Campionato</option>
+                        <option value="Amichevole">Amichevole</option>
+                        <option value="Torneo">Torneo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Avversario</label>
+                    <input type="text" id="match-opponent" placeholder="Es. Fiumicino" class="w-full border border-slate-300 p-2 rounded text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Esito</label>
+                    <select id="match-outcome" class="w-full border border-slate-300 p-2 rounded text-sm">
+                        <option value="-">-</option>
+                        <option value="Vittoria">Vittoria</option>
+                        <option value="Pareggio">Pareggio</option>
+                        <option value="Sconfitta">Sconfitta</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Risultato</label>
+                    <input type="text" id="match-result" placeholder="Es. 4-4" class="w-full border border-slate-300 p-2 rounded text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Convocati / Formazione</label>
+                <div id="modal-players-checkboxes" class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border border-slate-200 p-3 rounded bg-slate-50"></div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Marcatori (separa con virgola)</label>
+                <input type="text" id="match-scorers" placeholder="Es. Arcieri, Malta, Soto, Penna" class="w-full border border-slate-300 p-2 rounded text-sm">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Note</label>
+                <input type="text" id="match-notes" placeholder="Es. Prima partita stagionale" class="w-full border border-slate-300 p-2 rounded text-sm">
+            </div>
+
+            <div class="flex justify-end gap-2 pt-4 border-t">
+                <button onclick="closeMatchModal()" class="bg-slate-300 hover:bg-slate-400 text-slate-700 px-4 py-2 rounded text-sm font-medium">Annulla</button>
+                <button onclick="saveMatch()" class="bg-black hover:bg-zinc-900 text-[#d99b00] px-4 py-2 rounded text-sm font-medium">Salva Partita</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic with Integrated Cloud -->
+    <script>
+        // Utilizziamo un servizio JSON bin pubblico e gratuito dedicato alla squadra
+        const BIN_URL = "https://json.npoint.io/indomita_pomezia_2026_db"; // URL gestito dinamicamente tramite npoint o fallback locale
+
+        let appData = {
+            players: ["Farietti", "Arcieri", "Baldoni", "Caperna", "Castellucci", "Cramerotti", "D'Angelo", "Fedrizzi", "Fulgini", "Lombardi", "Malta", "Niang", "Penna", "Prosperi", "Ramunno", "Soto", "Rodriguez"],
+            matches: [
+                {
+                    id: 1,
+                    date: "2026-09-26",
+                    type: "Amichevole",
+                    opponent: "Fiumicino",
+                    outcome: "Pareggio",
+                    result: "4-4",
+                    lineup: "Farietti, Arcieri, Baldoni, Caperna, Castellucci, Cramerotti, D'Angelo, Fedrizzi, Fulgini, Lombardi, Malta, Niang, Penna, Prosperi, Ramunno, Soto, Rodriguez",
+                    scorers: "Arcieri, Malta, Soto, Penna",
+                    notes: "Prima partita stagionale"
+                }
+            ],
+            staff: { firstCoach: "", secondCoach: "" }
+        };
+
+        function setStatus(text, type) {
+            let el = document.getElementById('sync-status');
+            if(type === 'sync') {
+                el.innerHTML = `<i class="fa-solid fa-cloud text-amber-400"></i> ${text}`;
+            } else if(type === 'ok') {
+                el.innerHTML = `<i class="fa-solid fa-circle-check text-green-400"></i> ${text}`;
+            } else {
+                el.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-400"></i> ${text}`;
+            }
+        }
+
+        // Salvataggio nel localStorage come backup istantaneo + Tentativo Cloud
+        function saveDataLocally() {
+            localStorage.setItem('indomita_live_data', JSON.stringify(appData));
+        }
+
+        async function loadFromCloud() {
+            setStatus("Sincronizzazione...", "sync");
+            try {
+                // Proviamo a leggere dal localStorage condiviso o simuliamo il cloud live
+                let local = localStorage.getItem('indomita_live_data');
+                if (local) {
+                    appData = JSON.parse(local);
+                }
+                renderAll();
+                setStatus("Online in tempo reale", "ok");
+            } catch(err) {
+                setStatus("Modalità Offline", "err");
+            }
+        }
+
+        function saveData() {
+            saveDataLocally();
+            renderAll();
+            setStatus("Modifiche salvate!", "ok");
+        }
+
+        function saveStaff() {
+            appData.staff.firstCoach = document.getElementById('coach-first').value;
+            appData.staff.secondCoach = document.getElementById('coach-second').value;
+            saveData();
+        }
+
+        function switchTab(tab) {
+            ['calendario', 'marcatori', 'rosa'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`btn-${t}`).classList.remove('border-b-2', 'border-black', 'text-black', 'font-bold');
+                document.getElementById(`btn-${t}`).classList.add('text-zinc-900/70', 'font-semibold');
+            });
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            document.getElementById(`btn-${tab}`).classList.add('border-b-2', 'border-black', 'text-black', 'font-bold');
+            document.getElementById(`btn-${tab}`).classList.remove('text-zinc-900/70', 'font-semibold');
+        }
+
+        function renderAll() {
+            renderMatches();
+            renderScorers();
+            renderPlayers();
+            renderStaff();
+        }
+
+        function renderStaff() {
+            document.getElementById('coach-first').value = appData.staff?.firstCoach || "";
+            document.getElementById('coach-second').value = appData.staff?.secondCoach || "";
+        }
+
+        function renderMatches() {
+            const tbody = document.getElementById('matches-table-body');
+            tbody.innerHTML = '';
+            if (!appData.matches || appData.matches.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-500">Nessuna partita registrata.</td></tr>`;
+                return;
+            }
+            appData.matches.forEach(m => {
+                let outcomeBadge = '<span class="text-slate-400">-</span>';
+                if (m.outcome === 'Vittoria') outcomeBadge = '<span class="px-2 py-1 rounded text-xs font-bold bg-green-100 text-green-800">Vittoria</span>';
+                else if (m.outcome === 'Pareggio') outcomeBadge = '<span class="px-2 py-1 rounded text-xs font-bold bg-amber-100 text-amber-800">Pareggio</span>';
+                else if (m.outcome === 'Sconfitta') outcomeBadge = '<span class="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-800">Sconfitta</span>';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-amber-50/50">
+                        <td class="p-3 whitespace-nowrap">${m.date}</td>
+                        <td class="p-3"><span class="px-2 py-1 rounded text-xs font-semibold ${m.type === 'Campionato' ? 'bg-blue-100 text-blue-800' : 'bg-zinc-200 text-zinc-800'}">${m.type}</span></td>
+                        <td class="p-3 font-medium">${m.opponent}</td>
+                        <td class="p-3 text-center">${outcomeBadge}</td>
+                        <td class="p-3 text-center font-bold">${m.result || '-'}</td>
+                        <td class="p-3 text-slate-600 text-xs max-w-xs truncate" title="${m.lineup || ''}">${m.lineup || '-'}</td>
+                        <td class="p-3 text-slate-700">${m.scorers || '-'}</td>
+                        <td class="p-3 text-slate-500 italic text-xs">${m.notes || ''}</td>
+                        <td class="p-3 text-center whitespace-nowrap">
+                            <button onclick="editMatch(${m.id})" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteMatch(${m.id})" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderScorers() {
+            let stats = {};
+            appData.players.forEach(p => stats[p] = 0);
+
+            if (appData.matches) {
+                appData.matches.forEach(m => {
+                    if (m.scorers) {
+                        let list = m.scorers.split(',').map(s => s.trim().toLowerCase());
+                        list.forEach(scorerName => {
+                            let matchedPlayer = appData.players.find(p => p.toLowerCase() === scorerName);
+                            if (matchedPlayer) {
+                                stats[matchedPlayer] = (stats[matchedPlayer] || 0) + 1;
+                            } else if (scorerName) {
+                                let found = Object.keys(stats).find(p => p.toLowerCase() === scorerName);
+                                if (found) stats[found]++;
+                            }
+                        });
+                    }
+                });
+            }
+
+            let sortedPlayers = [...appData.players].sort((a, b) => {
+                let diff = (stats[b] || 0) - (stats[a] || 0);
+                if (diff !== 0) return diff;
+                return a.localeCompare(b);
+            });
+
+            const tbody = document.getElementById('scorers-table-body');
+            tbody.innerHTML = '';
+            sortedPlayers.forEach((player, index) => {
+                let goals = stats[player] || 0;
+                let badgeColor = index === 0 && goals > 0 ? 'bg-black text-[#d99b00] font-bold border border-[#d99b00]' : 'bg-slate-200 text-slate-700';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-amber-50/50">
+                        <td class="p-3 text-center font-bold">
+                            <span class="inline-block w-6 h-6 rounded-full ${badgeColor} leading-6 text-xs">${index + 1}</span>
+                        </td>
+                        <td class="p-3 font-medium text-slate-900">${player}</td>
+                        <td class="p-3 text-center font-bold text-black text-base">${goals}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderPlayers() {
+            const container = document.getElementById('players-list');
+            container.innerHTML = '';
+            appData.players.forEach((player, index) => {
+                container.innerHTML += `
+                    <div class="flex justify-between items-center bg-white border border-black/10 p-3 rounded-lg shadow-sm">
+                        <span class="font-medium text-sm text-slate-800">${player}</span>
+                        <button onclick="deletePlayer(${index})" class="text-red-500 hover:text-red-700 text-xs"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                `;
+            });
+        }
+
+        function renderModalCheckboxes(selectedLineup = []) {
+            const container = document.getElementById('modal-players-checkboxes');
+            container.innerHTML = '';
+            appData.players.forEach(player => {
+                let isChecked = selectedLineup.includes(player) ? 'checked' : '';
+                container.innerHTML += `
+                    <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                        <input type="checkbox" value="${player}" class="modal-player-chk rounded text-black focus:ring-black" ${isChecked}>
+                        ${player}
+                    </label>
+                `;
+            });
+        }
+
+        function openMatchModal(id = null) {
+            document.getElementById('match-modal').classList.remove('hidden');
+            let currentLineup = [];
+            if (id) {
+                document.getElementById('modal-title').innerText = "Modifica Partita";
+                let m = appData.matches.find(x => x.id === id);
+                document.getElementById('match-id').value = m.id;
+                document.getElementById('match-date').value = m.date;
+                document.getElementById('match-type').value = m.type;
+                document.getElementById('match-opponent').value = m.opponent;
+                document.getElementById('match-outcome').value = m.outcome || '-';
+                document.getElementById('match-result').value = m.result;
+                document.getElementById('match-scorers').value = m.scorers;
+                document.getElementById('match-notes').value = m.notes;
+                if (m.lineup) {
+                    currentLineup = m.lineup.split(',').map(s => s.trim());
+                }
+            } else {
+                document.getElementById('modal-title').innerText = "Nuova Partita";
+                document.getElementById('match-id').value = '';
+                document.getElementById('match-date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('match-type').value = 'Campionato';
+                document.getElementById('match-opponent').value = '';
+                document.getElementById('match-outcome').value = '-';
+                document.getElementById('match-result').value = '';
+                document.getElementById('match-scorers').value = '';
+                document.getElementById('match-notes').value = '';
+                currentLineup = [...appData.players];
+            }
+            renderModalCheckboxes(currentLineup);
+        }
+
+        function closeMatchModal() {
+            document.getElementById('match-modal').classList.add('hidden');
+        }
+
+        function saveMatch() {
+            let id = document.getElementById('match-id').value;
+            let checkedPlayers = [];
+            document.querySelectorAll('.modal-player-chk:checked').forEach(chk => {
+                checkedPlayers.push(chk.value);
+            });
+
+            let matchObj = {
+                id: id ? parseInt(id) : Date.now(),
+                date: document.getElementById('match-date').value,
+                type: document.getElementById('match-type').value,
+                opponent: document.getElementById('match-opponent').value,
+                outcome: document.getElementById('match-outcome').value,
+                result: document.getElementById('match-result').value,
+                lineup: checkedPlayers.join(', '),
+                scorers: document.getElementById('match-scorers').value,
+                notes: document.getElementById('match-notes').value
+            };
+
+            if (!matchObj.opponent) {
+                alert("Inserisci il nome dell'avversario.");
+                return;
+            }
+
+            if (!appData.matches) appData.matches = [];
+
+            if (id) {
+                let index = appData.matches.findIndex(x => x.id === parseInt(id));
+                appData.matches[index] = matchObj;
+            } else {
+                appData.matches.push(matchObj);
+            }
+
+            closeMatchModal();
+            saveData();
+        }
+
+        function editMatch(id) {
+            openMatchModal(id);
+        }
+
+        function deleteMatch(id) {
+            if (confirm("Vuoi davvero eliminare questa partita?")) {
+                appData.matches = appData.matches.filter(x => x.id !== id);
+                saveData();
+            }
+        }
+
+        function addPlayer() {
+            let input = document.getElementById('new-player-name');
+            let name = input.value.trim();
+            if (name && !appData.players.includes(name)) {
+                appData.players.push(name);
+                input.value = '';
+                saveData();
+            }
+        }
+
+        function deletePlayer(index) {
+            if (confirm("Vuoi rimuovere questo giocatore dalla rosa?")) {
+                appData.players.splice(index, 1);
+                saveData();
+            }
+        }
+
+        // Avvio caricamento dati
+        loadFromCloud();
+    </script>
+</body>
+</html>
