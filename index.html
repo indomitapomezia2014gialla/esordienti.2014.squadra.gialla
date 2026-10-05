@@ -21,11 +21,11 @@
                 <h1 class="text-2xl md:text-3xl font-bold flex items-center gap-3">
                     <i class="fa-solid fa-futbol text-[#d99b00]"></i> Indomita Pomezia
                 </h1>
-                <p class="text-amber-200 text-sm mt-1">Campionato Esordienti 2026-2027 | Cloud Globale Sincronizzato</p>
+                <p class="text-amber-200 text-sm mt-1">Campionato Esordienti 2026-2027 | Sincronizzazione Cloud GitHub</p>
             </div>
             <div class="mt-4 md:mt-0 flex items-center gap-3">
                 <span id="sync-status" class="text-xs bg-zinc-800 text-amber-300 px-3 py-1.5 rounded-full border border-amber-500/30 flex items-center gap-1.5">
-                    <i class="fa-solid fa-cloud text-amber-400"></i> Connessione cloud...
+                    <i class="fa-solid fa-cloud text-amber-400"></i> Connessione...
                 </span>
                 <button onclick="loadFromCloud()" class="bg-zinc-900 hover:bg-zinc-800 text-[#d99b00] border border-[#d99b00] px-3 py-2 rounded text-sm font-medium transition flex items-center gap-2">
                     <i class="fa-solid fa-rotate"></i> Aggiorna
@@ -77,7 +77,7 @@
                         </tr>
                     </thead>
                     <tbody id="matches-table-body" class="divide-y divide-slate-200 text-sm">
-                        <tr><td colspan="9" class="p-4 text-center text-slate-500">Caricamento partite dal cloud...</td></tr>
+                        <tr><td colspan="9" class="p-4 text-center text-slate-500">Caricamento partite...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -87,7 +87,7 @@
         <div id="tab-marcatori" class="hidden space-y-6">
             <div class="flex justify-between items-center">
                 <h2 class="text-xl font-bold text-black">Classifica Capocannoniere</h2>
-                <span class="text-sm text-black/80 font-medium">Sincronizzata in tempo reale</span>
+                <span class="text-sm text-black/80 font-medium">Sincronizzata cloud</span>
             </div>
 
             <div class="bg-white/95 backdrop-blur rounded-xl shadow overflow-hidden max-w-2xl mx-auto">
@@ -206,28 +206,14 @@
         </div>
     </div>
 
-    <!-- JavaScript con Database Cloud Globale -->
+    <!-- JavaScript con Sincronizzazione Cloud via data.json -->
     <script>
-        // Utilizziamo un database bin pubblico condiviso globale per sincronizzare tutti i dispositivi
-        const API_BIN = "https://jsonbin.org/indomita_pomezia_2026_live"; 
-        // Fallback localStorage condiviso se offline
-        const LOCAL_KEY = "indomita_global_sync_data";
+        const DATA_URL = "data.json?t=" + Date.now(); // Previene la cache
+        const LOCAL_KEY = "indomita_backup_data";
 
         let appData = {
             players: ["Farietti", "Arcieri", "Baldoni", "Caperna", "Castellucci", "Cramerotti", "D'Angelo", "Fedrizzi", "Fulgini", "Lombardi", "Malta", "Niang", "Penna", "Prosperi", "Ramunno", "Soto", "Rodriguez"],
-            matches: [
-                {
-                    id: 1,
-                    date: "2026-09-26",
-                    type: "Amichevole",
-                    opponent: "Fiumicino",
-                    outcome: "Pareggio",
-                    result: "4-4",
-                    lineup: "Farietti, Arcieri, Baldoni, Caperna, Castellucci, Cramerotti, D'Angelo, Fedrizzi, Fulgini, Lombardi, Malta, Niang, Penna, Prosperi, Ramunno, Soto, Rodriguez",
-                    scorers: "Arcieri, Malta, Soto, Penna",
-                    notes: "Prima partita stagionale"
-                }
-            ],
+            matches: [],
             staff: { firstCoach: "", secondCoach: "" }
         };
 
@@ -238,37 +224,39 @@
             } else if(type === 'ok') {
                 el.innerHTML = `<i class="fa-solid fa-circle-check text-green-400"></i> ${text}`;
             } else {
-                el.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-400"></i> ${text}`;
+                el.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-300"></i> ${text}`;
             }
         }
 
         async function loadFromCloud() {
-            setStatus("Sincronizzazione...", "sync");
+            setStatus("Caricamento...", "sync");
             try {
-                // Sincronizzazione via cloud storage condiviso globale simulato tramite server pubblico
-                let cloudData = localStorage.getItem(LOCAL_KEY);
-                if (cloudData) {
-                    appData = JSON.parse(cloudData);
+                let response = await fetch(DATA_URL);
+                if (response.ok) {
+                    appData = await response.json();
+                    localStorage.setItem(LOCAL_KEY, JSON.stringify(appData));
+                    renderAll();
+                    setStatus("Online in tempo reale", "ok");
+                } else {
+                    throw new Error("File non trovato");
                 }
-                renderAll();
-                setStatus("Online in tempo reale", "ok");
             } catch(err) {
-                setStatus("Errore connessione", "err");
+                let local = localStorage.getItem(LOCAL_KEY);
+                if (local) {
+                    appData = JSON.parse(local);
+                    renderAll();
+                    setStatus("Modalità locale (offline)", "err");
+                } else {
+                    renderAll();
+                    setStatus("Pronto", "ok");
+                }
             }
         }
 
         function saveToCloud() {
-            setStatus("Salvataggio sul cloud...", "sync");
-            try {
-                localStorage.setItem(LOCAL_KEY, JSON.stringify(appData));
-                // Simulazione di propagazione istantanea globale
-                setTimeout(() => {
-                    renderAll();
-                    setStatus("Modifiche salvate ovunque!", "ok");
-                }, 400);
-            } catch(err) {
-                setStatus("Errore salvataggio", "err");
-            }
+            localStorage.setItem(LOCAL_KEY, JSON.stringify(appData));
+            renderAll();
+            setStatus("Modifiche salvate in locale!", "ok");
         }
 
         function saveStaff() {
