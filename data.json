@@ -1,0 +1,17 @@
+{
+  "players": ["Farietti", "Arcieri", "Baldoni", "Caperna", "Castellucci", "Cramerotti", "D'Angelo", "Fedrizzi", "Fulgini", "Lombardi", "Malta", "Niang", "Penna", "Prosperi", "Ramunno", "Soto", "Rodriguez"],
+  "matches": [
+    {
+      "id": 1,
+      "date": "2026-09-26",
+      "type": "Amichevole",
+      "opponent": "Fiumicino",
+      "outcome": "Pareggio",
+      "result": "4-4",
+      "lineup": "Farietti, Arcieri, Baldoni, Caperna, Castellucci, Cramerotti, D'Angelo, Fedrizzi, Fulgini, Lombardi, Malta, Niang, Penna, Prosperi, Ramunno, Soto, Rodriguez",
+      "scorers": "Arcieri, Malta, Soto, Penna",
+      "notes": "Prima partita stagionale"
+    }
+  ],
+  "staff": { "firstCoach": "", "secondCoach": "" }
+}
